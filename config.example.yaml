@@ -1,6 +1,6 @@
 # Copy the shape below into config.yaml and replace the example repositories.
-# This file contains no credentials; keep MAINTENANCE_APP_ID and
-# MAINTENANCE_APP_PRIVATE_KEY in GitHub Actions secrets instead.
+# This file contains no credentials; keep MAINTENANCE_GITHUB_TOKEN in
+# GitHub Actions secrets instead.
 version: 1
 
 defaults:

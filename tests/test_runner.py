@@ -29,7 +29,7 @@ def test_matrix_requires_at_least_one_check():
 
 
 def test_configured_checks_do_not_receive_workflow_tokens(monkeypatch):
-    monkeypatch.setenv("GH_TOKEN", "app-token")
+    monkeypatch.setenv("GH_TOKEN", "maintenance-pat")
     monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")
 
     environment = _checks_environment()

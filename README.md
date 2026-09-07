@@ -4,20 +4,19 @@ Runs one low-risk Copilot maintenance task per trusted GitHub repository each Mo
 
 ## Setup
 
-1. Create a GitHub App with access to each target repository:
+1. Create a fine-grained personal access token limited to the target
+   repositories. Grant it `Contents: Read and write`,
+   `Pull requests: Read and write`, and `Metadata: Read` access. Organization
+   repositories may require administrator approval.
 
-   | Permission | Access |
-   | --- | --- |
-   | Contents | Read and write |
-   | Pull requests | Read and write |
-   | Metadata | Read |
-
-2. Add the App credentials to this repository:
+2. Add the token to this repository:
 
    ```bash
-   gh secret set MAINTENANCE_APP_ID
-   gh secret set MAINTENANCE_APP_PRIVATE_KEY < path/to/private-key.pem
+   gh secret set MAINTENANCE_GITHUB_TOKEN
    ```
+
+   Track its expiration: publishing stops when the token expires or its owner
+   loses repository access. Do not use a broadly scoped classic `repo` token.
 
 3. Enable Copilot for the account or organization running the workflow.
 
@@ -77,7 +76,10 @@ A dry run executes Copilot and the configured checks without creating a branch, 
 
 ## Boundaries
 
-Copilot cannot access the GitHub App token or publish changes. The finalizer owns publishing and rejects:
+Copilot cannot access `MAINTENANCE_GITHUB_TOKEN` or publish changes. It receives
+only the short-lived built-in workflow token for Copilot requests. The
+fine-grained PAT is exposed only to target checkout, open-PR detection, and the
+finalizer. The finalizer owns publishing and rejects:
 
 - failed checks
 - changed commits or branches
@@ -88,3 +90,8 @@ Copilot cannot access the GitHub App token or publish changes. The finalizer own
 An existing open `maintenance/*` PR skips that repository. Jobs run one at a time.
 
 Only configure trusted repositories. Their instructions run inside the agent session.
+
+Commits use the configured author name and email, but authentication and push/PR
+activity are attributed to the PAT owner. To receive profile contribution
+credit, configure an email linked to that GitHub account and merge the commit
+into the repository's default branch.

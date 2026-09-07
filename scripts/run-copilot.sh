@@ -10,8 +10,8 @@ if [[ ! -f "$prompt_file" ]]; then
   exit 1
 fi
 
-# Copilot authenticates with the built-in workflow token. The GitHub App token
-# is deliberately only provided to the later finalization step.
+# Copilot authenticates with the built-in workflow token. The fine-grained PAT
+# is deliberately only provided to checkout and later publication steps.
 export GH_TOKEN="$GITHUB_TOKEN"
 exec copilot \
   --no-auto-update \

@@ -71,14 +71,6 @@ jobs:
       max-parallel: 1
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
-      - name: Mint target repository GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.MAINTENANCE_APP_ID }}
-          private-key: ${{ secrets.MAINTENANCE_APP_PRIVATE_KEY }}
-          owner: ${{ matrix.owner }}
-          repositories: ${{ matrix.name }}
       - name: Check out orchestrator tools
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -91,7 +83,7 @@ jobs:
         with:
           repository: ${{ matrix.repository }}
           ref: ${{ matrix.base_branch || '' }}
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.MAINTENANCE_GITHUB_TOKEN }}
           persist-credentials: false
           fetch-depth: 0
           path: target
@@ -109,7 +101,7 @@ jobs:
       - name: Skip when an automated maintenance PR is already open
         id: existing
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.MAINTENANCE_GITHUB_TOKEN }}
           MAINTENANCE_REPOSITORY: ${{ matrix.repository }}
         run: |
           if [[ "$(python scripts/check-open-pr.py "$MAINTENANCE_REPOSITORY")" == "true" ]]; then
@@ -128,7 +120,7 @@ jobs:
       - name: Run safety gates and publish
         if: steps.existing.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.MAINTENANCE_GITHUB_TOKEN }}
           MAINTENANCE_BASE_SHA: ${{ steps.target-base.outputs.sha }}
           MAINTENANCE_BASE_BRANCH: ${{ steps.target-base.outputs.branch }}
           MAINTENANCE_MATRIX_JSON: ${{ toJSON(matrix) }}

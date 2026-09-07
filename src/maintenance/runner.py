@@ -1,4 +1,4 @@
-"""Post-agent safety checks and GitHub App-backed publication."""
+"""Post-agent safety checks and fine-grained PAT-backed publication."""
 
 from __future__ import annotations
 
@@ -133,7 +133,7 @@ def _repository_identifier(value: Any) -> str:
 def _github_environment() -> dict[str, str]:
     token = os.environ.get("GH_TOKEN")
     if not token:
-        raise RunnerError("GH_TOKEN is required for GitHub App operations")
+        raise RunnerError("GH_TOKEN is required for target repository operations")
     return os.environ.copy()
 
 
@@ -283,7 +283,7 @@ def _create_pr(
             "",
             f"- Commit author: `{author_name}`",
             f"- Configured checks: `{len(checks)}`",
-            "- The GitHub App installation token is the authentication and pusher identity.",
+            "- A fine-grained token authenticates the push and pull request as its owner.",
             "- This PR is intentionally limited to one low-risk maintenance change.",
         ]
     )
