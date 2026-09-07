@@ -13,27 +13,27 @@ defaults:
   draft_pr: false
 
 repositories:
-  - owner: brettinternet
+  - owner: &repository_owner brettinternet
     name: maintenance
-  - owner: brettinternet
+  - owner: *repository_owner
     name: worklease
-  - owner: brettinternet
+  - owner: *repository_owner
     name: hum
-  - owner: brettinternet
+  - owner: *repository_owner
     name: brettinternet.github.io
-  - owner: brettinternet
+  - owner: *repository_owner
     name: pi-extensions
-  - owner: brettinternet
+  - owner: *repository_owner
     name: herdr-plugins
-  - owner: brettinternet
+  - owner: *repository_owner
     name: panelctl
-  - owner: brettinternet
+  - owner: *repository_owner
     name: HyperWindow
-  - owner: brettinternet
+  - owner: *repository_owner
     name: containers
-  - owner: brettinternet
+  - owner: *repository_owner
     name: project
-  - owner: brettinternet
+  - owner: *repository_owner
     name: mic-mute
-  - owner: brettinternet
+  - owner: *repository_owner
     name: trmnl
