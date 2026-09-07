@@ -8,7 +8,30 @@ defaults:
     name: brett
     email: 20871604+brettinternet@users.noreply.github.com
   base_branch: null
-  checks: []
+  checks:
+    - [git, diff, --check]
   draft_pr: false
 
-repositories: []
+repositories:
+  - owner: brettinternet
+    name: worklease
+  - owner: brettinternet
+    name: hum
+  - owner: brettinternet
+    name: brettinternet.github.io
+  - owner: brettinternet
+    name: pi-extensions
+  - owner: brettinternet
+    name: herdr-plugins
+  - owner: brettinternet
+    name: panelctl
+  - owner: brettinternet
+    name: HyperWindow
+  - owner: brettinternet
+    name: containers
+  - owner: brettinternet
+    name: project
+  - owner: brettinternet
+    name: mic-mute
+  - owner: brettinternet
+    name: trmnl
