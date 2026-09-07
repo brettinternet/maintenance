@@ -14,6 +14,8 @@ defaults:
 
 repositories:
   - owner: brettinternet
+    name: maintenance
+  - owner: brettinternet
     name: worklease
   - owner: brettinternet
     name: hum
