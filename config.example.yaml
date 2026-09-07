@@ -1,0 +1,39 @@
+# Copy the shape below into config.yaml and replace the example repositories.
+# This file contains no credentials; keep MAINTENANCE_APP_ID and
+# MAINTENANCE_APP_PRIVATE_KEY in GitHub Actions secrets instead.
+version: 1
+
+defaults:
+  enabled: true
+  # "auto" avoids depending on account-specific model availability.
+  model: auto
+  commit_author:
+    name: Maintenance Bot
+    email: maintenance-bot@users.noreply.github.com
+  # null means the repository's default branch. Set this to main/master/etc.
+  base_branch: null
+  # Checks are argv arrays, not shell command strings. They run from the
+  # target repository root after Copilot has finished.
+  checks:
+    - [bun, test]
+  draft_pr: true
+
+repositories:
+  - owner: octo-org
+    name: ledger
+    enabled: true
+    model: auto
+    commit_author:
+      name: Ledger Maintenance Bot
+      email: ledger-maintenance@users.noreply.github.com
+    base_branch: main
+    checks:
+      - [bun, test]
+      - [python, -m, pytest, -q]
+    draft_pr: true
+
+  - owner: octo-org
+    name: docs-site
+    enabled: false
+    # Omitted fields inherit defaults. Disabled repositories are excluded
+    # from the Actions matrix.

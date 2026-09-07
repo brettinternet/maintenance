@@ -1,0 +1,135 @@
+name: Repository maintenance
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Optional one-repository filter (owner/name)"
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "Run the agent and checks without creating a branch, push, or PR"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: maintenance-orchestrator
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Validate configuration and plan matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has_targets: ${{ steps.matrix.outputs.has_targets }}
+    steps:
+      - name: Check out orchestrator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.12.1"
+      - name: Install orchestrator dependencies
+        run: uv sync --frozen
+      - name: Emit target matrix
+        id: matrix
+        env:
+          MAINTENANCE_REPOSITORY_FILTER: ${{ github.event_name == 'workflow_dispatch' && inputs.repository || '' }}
+          MAINTENANCE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+        run: |
+          uv run maintenance matrix \
+            --config config.yaml \
+            --filter "$MAINTENANCE_REPOSITORY_FILTER" \
+            --dry-run "$MAINTENANCE_DRY_RUN" \
+            --output "$GITHUB_OUTPUT"
+
+  maintain:
+    name: Maintain ${{ matrix.repository }}
+    needs: plan
+    if: needs.plan.outputs.has_targets == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      copilot-requests: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Mint target repository GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.MAINTENANCE_APP_ID }}
+          private-key: ${{ secrets.MAINTENANCE_APP_PRIVATE_KEY }}
+          owner: ${{ matrix.owner }}
+          repositories: ${{ matrix.name }}
+      - name: Check out orchestrator tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          token: ${{ github.token }}
+          persist-credentials: false
+      - name: Check out target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.base_branch || '' }}
+          token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
+          fetch-depth: 0
+          path: target
+      - name: Record target base revision
+        id: target-base
+        working-directory: target
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "branch=$(git branch --show-current)" >> "$GITHUB_OUTPUT"
+      - name: Install pinned Copilot CLI and runner tools
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          working_directory: .
+          install_args: "python bun node npm:@github/copilot gh"
+      - name: Skip when an automated maintenance PR is already open
+        id: existing
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          MAINTENANCE_REPOSITORY: ${{ matrix.repository }}
+        run: |
+          if [[ "$(python scripts/check-open-pr.py "$MAINTENANCE_REPOSITORY")" == "true" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "An open maintenance PR already exists; skipping this repository."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Ask Copilot for one low-risk maintenance task
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MAINTENANCE_MODEL: ${{ matrix.model }}
+        working-directory: target
+        run: ../scripts/run-copilot.sh "$GITHUB_WORKSPACE/prompts/maintenance.md"
+      - name: Run safety gates and publish
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          MAINTENANCE_BASE_SHA: ${{ steps.target-base.outputs.sha }}
+          MAINTENANCE_BASE_BRANCH: ${{ steps.target-base.outputs.branch }}
+          MAINTENANCE_MATRIX_JSON: ${{ toJSON(matrix) }}
+        run: python scripts/finalize-maintenance.py --repo-root target

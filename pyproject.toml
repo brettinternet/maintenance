@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maintenance-orchestrator"
+version = "0.1.0"
+description = "A GitHub Actions orchestrator for low-risk repository maintenance"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "PyYAML==6.0.3",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==8.4.2",
+]
+
+[project.scripts]
+maintenance = "maintenance.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maintenance"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-q"]

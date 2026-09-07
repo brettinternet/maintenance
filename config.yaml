@@ -1,0 +1,16 @@
+# Public-safe configuration. Keep credentials in GitHub Actions secrets.
+version: 1
+
+defaults:
+  enabled: true
+  model: auto
+  commit_author:
+    name: Maintenance Bot
+    email: maintenance-bot@users.noreply.github.com
+  base_branch: null
+  # Each check is an argv array and is executed without a shell.
+  checks: []
+  draft_pr: true
+
+# Add trusted repositories here. An empty list intentionally performs no work.
+repositories: []

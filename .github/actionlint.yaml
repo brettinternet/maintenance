@@ -1,0 +1,6 @@
+# actionlint 1.7.12 predates GitHub's copilot-requests permission name.
+# Keep this narrow compatibility exception until actionlint recognizes it.
+paths:
+  .github/workflows/maintenance.yml:
+    ignore:
+      - 'unknown permission scope "copilot-requests"'
