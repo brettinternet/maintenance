@@ -34,6 +34,7 @@ Runs one low-risk Copilot maintenance task per trusted GitHub repository each Mo
      checks:
        - [bun, test]
      draft_pr: true
+     runs_on: ubuntu-latest
    repositories:
      - owner: acme
        name: service
@@ -70,7 +71,9 @@ A dry run executes Copilot and the configured checks without creating a branch, 
 - Repository fields override `defaults`.
 - `base_branch: null` uses the repository's default branch.
 - `checks` are argv arrays executed from the target repository root.
-- Every enabled repository needs at least one check.
+- `runs_on` selects the GitHub-hosted runner label and defaults to `ubuntu-latest`.
+- The workflow installs each target's committed mise toolchain before running the agent.
+- Every enabled repository needs at least one check; configure its actual test, lint, or build gates rather than only a whitespace check.
 - `enabled: false` excludes a repository.
 - The dispatch filter must be exactly `owner/name`.
 

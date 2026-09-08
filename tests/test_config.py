@@ -19,10 +19,12 @@ defaults:
   checks:
     - [python, -m, pytest]
   draft_pr: true
+  runs_on: ubuntu-latest
 repositories:
   - owner: acme
     name: api
     model: gpt-5
+    runs_on: macos-15
     commit_author:
       email: api@example.com
     checks:
@@ -50,7 +52,9 @@ def test_defaults_are_merged_into_repository_overrides(tmp_path):
     assert api.commit_author_email == "api@example.com"
     assert api.checks == (("bun", "test"),)
     assert api.draft_pr is True
+    assert api.runs_on == "macos-15"
     assert docs.enabled is False
+    assert docs.runs_on == "ubuntu-latest"
     assert docs.model == "auto"
 
     matrix = config.matrix(dry_run=True)
@@ -133,3 +137,4 @@ def test_matrix_is_compact_json_ready_for_actions(tmp_path):
     matrix = json.loads(matrix_json(config))
     assert set(matrix) == {"include"}
     assert matrix["include"][0]["checks"] == [["bun", "test"]]
+    assert matrix["include"][0]["runs_on"] == "macos-15"

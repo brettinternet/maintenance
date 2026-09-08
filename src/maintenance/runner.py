@@ -15,6 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from .config import ConfigError, parse_repository_identifier
+
 
 class RunnerError(RuntimeError):
     """Raised when a maintenance run cannot safely continue."""
@@ -122,12 +124,10 @@ def changed_paths(cwd: Path) -> list[str]:
 
 
 def _repository_identifier(value: Any) -> str:
-    if not isinstance(value, str) or value.count("/") != 1 or any(character.isspace() for character in value):
-        raise RunnerError("matrix repository must be an owner/name string")
-    owner, name = value.split("/", 1)
-    if not owner or not name or any(character in "\x00\n\r" for character in value):
-        raise RunnerError("matrix repository must be an owner/name string")
-    return value
+    try:
+        return parse_repository_identifier(value, "matrix repository")
+    except ConfigError as error:
+        raise RunnerError(str(error)) from error
 
 
 def _github_environment() -> dict[str, str]:
@@ -259,11 +259,18 @@ def _maintenance_branch() -> str:
 
 
 def _git_with_app_token(command: Sequence[str], cwd: Path, token: str) -> None:
-    encoded = base64.b64encode(f"x-access-token:{token}".encode("utf-8")).decode("ascii")
-    _checked(
-        ["git", "-c", f"http.extraheader=AUTHORIZATION: basic {encoded}", *command],
-        cwd,
+    encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
+    environment = os.environ.copy()
+    environment.pop("GH_TOKEN", None)
+    environment.pop("GITHUB_TOKEN", None)
+    environment.update(
+        {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "http.extraheader",
+            "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {encoded}",
+        }
     )
+    _checked(["git", *command], cwd, env=environment)
 
 
 def _create_pr(

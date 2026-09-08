@@ -47,6 +47,7 @@ class RepositoryConfig:
     base_branch: str | None
     checks: tuple[tuple[str, ...], ...]
     draft_pr: bool
+    runs_on: str
 
     @property
     def repository(self) -> str:
@@ -66,6 +67,7 @@ class RepositoryConfig:
             "base_branch": self.base_branch,
             "checks": [list(command) for command in self.checks],
             "draft_pr": self.draft_pr,
+            "runs_on": self.runs_on,
             "dry_run": dry_run,
         }
 
@@ -136,6 +138,17 @@ def _repository_name(value: Any, location: str) -> str:
     return candidate
 
 
+def parse_repository_identifier(value: Any, location: str = "repository") -> str:
+    """Validate and normalize an ``owner/name`` GitHub repository identifier."""
+
+    if not isinstance(value, str) or value.count("/") != 1:
+        raise ConfigError(f"{location} must be owner/name")
+    owner_value, name_value = value.split("/", 1)
+    owner = _owner(owner_value, f"{location} owner")
+    name = _repository_name(name_value, f"{location} name")
+    return f"{owner}/{name}"
+
+
 def _branch(value: Any, location: str) -> str | None:
     if value is None:
         return None
@@ -203,7 +216,7 @@ def _checks(value: Any, location: str) -> tuple[tuple[str, ...], ...]:
 
 def _options(value: Any, location: str, inherited: Mapping[str, Any]) -> dict[str, Any]:
     options = _mapping(value, location)
-    allowed = {"enabled", "model", "commit_author", "base_branch", "checks", "draft_pr"}
+    allowed = {"enabled", "model", "commit_author", "base_branch", "checks", "draft_pr", "runs_on"}
     _check_keys(options, allowed, location)
     resolved = {
         "enabled": inherited["enabled"],
@@ -212,6 +225,7 @@ def _options(value: Any, location: str, inherited: Mapping[str, Any]) -> dict[st
         "base_branch": inherited["base_branch"],
         "checks": inherited["checks"],
         "draft_pr": inherited["draft_pr"],
+        "runs_on": inherited["runs_on"],
     }
     if "enabled" in options:
         if not isinstance(options["enabled"], bool):
@@ -233,6 +247,8 @@ def _options(value: Any, location: str, inherited: Mapping[str, Any]) -> dict[st
         if not isinstance(options["draft_pr"], bool):
             raise ConfigError(f"{location}.draft_pr must be a boolean")
         resolved["draft_pr"] = options["draft_pr"]
+    if "runs_on" in options:
+        resolved["runs_on"] = _string(options["runs_on"], f"{location}.runs_on")
     return resolved
 
 
@@ -247,6 +263,7 @@ def _repository_config(owner: str, name: str, options: Mapping[str, Any]) -> Rep
         base_branch=options["base_branch"],
         checks=options["checks"],
         draft_pr=options["draft_pr"],
+        runs_on=options["runs_on"],
     )
 
 
@@ -260,6 +277,7 @@ _BUILTIN_DEFAULTS: dict[str, Any] = {
     "base_branch": None,
     "checks": tuple(),
     "draft_pr": True,
+    "runs_on": "ubuntu-latest",
 }
 
 
@@ -284,7 +302,7 @@ def _parse_document(document: Any, source: str) -> MaintenanceConfig:
         repository = _mapping(raw_repository, location)
         _check_keys(
             repository,
-            {"owner", "name", "enabled", "model", "commit_author", "base_branch", "checks", "draft_pr"},
+            {"owner", "name", "enabled", "model", "commit_author", "base_branch", "checks", "draft_pr", "runs_on"},
             location,
             {"owner", "name"},
         )
@@ -324,12 +342,7 @@ def parse_repository_filter(value: str | None) -> str | None:
 
     if value is None or value == "":
         return None
-    if not isinstance(value, str) or value.count("/") != 1:
-        raise ConfigError("repository filter must be owner/name")
-    owner_value, name_value = value.split("/", 1)
-    owner = _owner(owner_value, "repository filter owner")
-    name = _repository_name(name_value, "repository filter name")
-    return f"{owner}/{name}"
+    return parse_repository_identifier(value, "repository filter")
 
 
 def matrix_json(config: MaintenanceConfig, repository_filter: str | None = None, dry_run: bool = False) -> str:

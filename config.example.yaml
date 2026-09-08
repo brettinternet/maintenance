@@ -17,6 +17,8 @@ defaults:
   checks:
     - [bun, test]
   draft_pr: true
+  # The GitHub-hosted runner label used for this repository.
+  runs_on: ubuntu-latest
 
 repositories:
   - owner: octo-org
@@ -31,6 +33,7 @@ repositories:
       - [bun, test]
       - [python, -m, pytest, -q]
     draft_pr: true
+    runs_on: ubuntu-latest
 
   - owner: octo-org
     name: docs-site

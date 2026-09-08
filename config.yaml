@@ -11,29 +11,89 @@ defaults:
   checks:
     - [git, diff, --check]
   draft_pr: false
+  runs_on: ubuntu-latest
 
 repositories:
   - owner: &repository_owner brettinternet
     name: maintenance
+    checks:
+      - [git, diff, --check]
+      - [uv, sync, --frozen]
+      - [uv, run, pytest]
+      - [shellcheck, scripts/run-copilot.sh, scripts/validate-config.sh]
+      - [actionlint, -config-file, .github/actionlint.yaml, .github/workflows/maintenance.yml]
   - owner: *repository_owner
     name: worklease
+    checks:
+      - [git, diff, --check]
+      - [mise, run, test]
+      - [mise, run, typecheck]
+      - [mise, run, lint]
+      - [mise, run, format-check]
   - owner: *repository_owner
     name: hum
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
     name: brettinternet.github.io
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [bun, run, check]
   - owner: *repository_owner
     name: pi-extensions
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [bun, run, check]
+      - [bun, run, test]
   - owner: *repository_owner
     name: herdr-plugins
+    checks:
+      - [git, diff, --check]
+      - [python, -m, unittest, discover, -s, tests]
+      - [python, command-palette/test_workspace_overview.py]
+      - [python, command-palette/test_workspace_picker.py]
+      - [python, workbench/test_workbench.py]
+      - [shellcheck, command-palette/open-workspace-overview.sh, command-palette/open-workspace-picker.sh, command-palette/open.sh, command-palette/palette.sh, previous-pane-focus/restore-previous.sh, previous-pane-focus/track-focus.sh, seamless-navigation/dispatch.sh, window-title/set-tab-title-from-pane.sh, window-title/sync-title.sh]
   - owner: *repository_owner
     name: panelctl
+    runs_on: macos-15
+    checks:
+      - [git, diff, --check]
+      - [swift, build, --disable-sandbox, --build-tests, -Xswiftc, -warnings-as-errors]
+      - [swift, test, --disable-sandbox]
+      - [scripts/test-release-version.sh]
   - owner: *repository_owner
     name: HyperWindow
+    runs_on: macos-15
+    checks:
+      - [git, diff, --check]
+      - [scripts/test-release-version.sh]
+      - [mise, exec, task, --, task, test:unit]
   - owner: *repository_owner
     name: containers
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, check]
   - owner: *repository_owner
     name: project
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, server:setup-ci]
+      - [mise, exec, task, --, task, client:setup-ci]
+      - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
     name: mic-mute
+    runs_on: macos-15
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, cargo, --, cargo, clippy, --locked, --release, --, -D, warnings]
+      - [mise, exec, cargo, --, cargo, fmt, --, --check]
+      - [mise, exec, cargo, --, cargo, test, --locked]
   - owner: *repository_owner
     name: trmnl
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, check]

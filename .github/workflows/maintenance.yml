@@ -61,7 +61,7 @@ jobs:
     name: Maintain ${{ matrix.repository }}
     needs: plan
     if: needs.plan.outputs.has_targets == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs_on }}
     permissions:
       contents: read
       pull-requests: read
@@ -97,7 +97,7 @@ jobs:
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
           working_directory: .
-          install_args: "python bun node npm:@github/copilot gh"
+          install_args: "python uv bun node npm:@github/copilot gh actionlint shellcheck task"
       - name: Skip when an automated maintenance PR is already open
         id: existing
         env:
@@ -110,6 +110,12 @@ jobs:
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Install target repository toolchain
+        if: steps.existing.outputs.skip != 'true'
+        working-directory: target
+        run: |
+          mise trust
+          mise install
       - name: Ask Copilot for one low-risk maintenance task
         if: steps.existing.outputs.skip != 'true'
         env:
