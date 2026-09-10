@@ -98,6 +98,8 @@ jobs:
         with:
           working_directory: .
           install_args: "python uv bun node npm:@github/copilot gh actionlint shellcheck task"
+      - name: Install orchestrator dependencies
+        run: uv sync --frozen
       - name: Skip when an automated maintenance PR is already open
         id: existing
         env:
