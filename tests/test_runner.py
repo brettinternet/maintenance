@@ -54,6 +54,11 @@ def test_matrix_requires_at_least_one_check():
         _matrix_checks({"checks": []})
 
 
+def test_matrix_rejects_control_characters_in_checks():
+    with pytest.raises(RunnerError, match="control characters"):
+        _matrix_checks({"checks": [["python", "-m\n", "pytest"]]})
+
+
 def test_configured_checks_do_not_receive_workflow_tokens(monkeypatch):
     monkeypatch.setenv("GH_TOKEN", "maintenance-pat")
     monkeypatch.setenv("GITHUB_TOKEN", "workflow-token")

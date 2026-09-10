@@ -205,6 +205,8 @@ def _matrix_checks(matrix: Mapping[str, Any]) -> list[list[str]]:
     for command_index, command in enumerate(value):
         if not isinstance(command, list) or not command or any(not isinstance(argument, str) for argument in command):
             raise RunnerError(f"matrix checks[{command_index}] must be a non-empty argv array")
+        if any(any(ord(character) < 32 for character in argument) for argument in command):
+            raise RunnerError(f"matrix checks[{command_index}] must not contain control characters")
         if not command[0]:
             raise RunnerError(f"matrix checks[{command_index}][0] must not be empty")
         checks.append(command)
