@@ -42,6 +42,9 @@ repositories:
       - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
     name: brettinternet.github.io
+    instructions: |
+      Prefer accessibility, semantic HTML, broken-link, metadata, or test-coverage improvements.
+      Do not rewrite authored posts or change the site's visual design.
     checks:
       - [git, diff, --check]
       - [bun, install, --frozen-lockfile]

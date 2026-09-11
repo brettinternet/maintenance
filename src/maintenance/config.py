@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,6 +47,7 @@ class RepositoryConfig:
     commit_author_name: str
     commit_author_email: str
     base_branch: str | None
+    instructions: str | None
     checks: tuple[tuple[str, ...], ...]
     draft_pr: bool
     runs_on: str
@@ -65,7 +68,9 @@ class RepositoryConfig:
             "commit_author_name": self.commit_author_name,
             "commit_author_email": self.commit_author_email,
             "base_branch": self.base_branch,
+            "instructions": self.instructions,
             "checks": [list(command) for command in self.checks],
+            "checks_prompt": "\n".join(f"- `{shlex.join(command)}`" for command in self.checks),
             "draft_pr": self.draft_pr,
             "runs_on": self.runs_on,
             "dry_run": dry_run,
@@ -196,6 +201,20 @@ def _author(value: Any, location: str, inherited: Mapping[str, str]) -> dict[str
     return resolved
 
 
+def _instructions(value: Any, location: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ConfigError(f"{location} must be a string or null")
+    if not value.strip():
+        raise ConfigError(f"{location} must not be empty")
+    if len(value) > 8_000:
+        raise ConfigError(f"{location} must not exceed 8000 characters")
+    if any(unicodedata.category(character) == "Cc" and character != "\n" for character in value):
+        raise ConfigError(f"{location} must not contain control characters other than newlines")
+    return value.strip()
+
+
 def _checks(value: Any, location: str) -> tuple[tuple[str, ...], ...]:
     if not isinstance(value, list):
         raise ConfigError(f"{location} must be a list of argv arrays")
@@ -216,13 +235,14 @@ def _checks(value: Any, location: str) -> tuple[tuple[str, ...], ...]:
 
 def _options(value: Any, location: str, inherited: Mapping[str, Any]) -> dict[str, Any]:
     options = _mapping(value, location)
-    allowed = {"enabled", "model", "commit_author", "base_branch", "checks", "draft_pr", "runs_on"}
+    allowed = {"enabled", "model", "commit_author", "base_branch", "instructions", "checks", "draft_pr", "runs_on"}
     _check_keys(options, allowed, location)
     resolved = {
         "enabled": inherited["enabled"],
         "model": inherited["model"],
         "commit_author": dict(inherited["commit_author"]),
         "base_branch": inherited["base_branch"],
+        "instructions": inherited["instructions"],
         "checks": inherited["checks"],
         "draft_pr": inherited["draft_pr"],
         "runs_on": inherited["runs_on"],
@@ -241,6 +261,8 @@ def _options(value: Any, location: str, inherited: Mapping[str, Any]) -> dict[st
         )
     if "base_branch" in options:
         resolved["base_branch"] = _branch(options["base_branch"], f"{location}.base_branch")
+    if "instructions" in options:
+        resolved["instructions"] = _instructions(options["instructions"], f"{location}.instructions")
     if "checks" in options:
         resolved["checks"] = _checks(options["checks"], f"{location}.checks")
     if "draft_pr" in options:
@@ -261,6 +283,7 @@ def _repository_config(owner: str, name: str, options: Mapping[str, Any]) -> Rep
         commit_author_name=options["commit_author"]["name"],
         commit_author_email=options["commit_author"]["email"],
         base_branch=options["base_branch"],
+        instructions=options["instructions"],
         checks=options["checks"],
         draft_pr=options["draft_pr"],
         runs_on=options["runs_on"],
@@ -275,6 +298,7 @@ _BUILTIN_DEFAULTS: dict[str, Any] = {
         "email": "maintenance-bot@users.noreply.github.com",
     },
     "base_branch": None,
+    "instructions": None,
     "checks": tuple(),
     "draft_pr": True,
     "runs_on": "ubuntu-latest",
@@ -302,7 +326,7 @@ def _parse_document(document: Any, source: str) -> MaintenanceConfig:
         repository = _mapping(raw_repository, location)
         _check_keys(
             repository,
-            {"owner", "name", "enabled", "model", "commit_author", "base_branch", "checks", "draft_pr", "runs_on"},
+            {"owner", "name", "enabled", "model", "commit_author", "base_branch", "instructions", "checks", "draft_pr", "runs_on"},
             location,
             {"owner", "name"},
         )

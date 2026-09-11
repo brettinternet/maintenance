@@ -123,6 +123,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MAINTENANCE_MODEL: ${{ matrix.model }}
+          MAINTENANCE_INSTRUCTIONS: ${{ matrix.instructions || '' }}
+          MAINTENANCE_CHECKS_PROMPT: ${{ matrix.checks_prompt }}
         working-directory: target
         run: ../scripts/run-copilot.sh "$GITHUB_WORKSPACE/prompts/maintenance.md"
       - name: Run safety gates and publish

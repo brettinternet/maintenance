@@ -31,6 +31,7 @@ Runs one low-risk Copilot maintenance task per trusted GitHub repository each Mo
        name: Maintenance Bot
        email: maintenance-bot@users.noreply.github.com
      base_branch: null
+     instructions: null
      checks:
        - [bun, test]
      draft_pr: true
@@ -38,6 +39,9 @@ Runs one low-risk Copilot maintenance task per trusted GitHub repository each Mo
    repositories:
      - owner: acme
        name: service
+       instructions: |
+         Prefer type-safety and test-coverage improvements.
+         Do not change public API behavior.
        checks:
          - [bun, test]
          - [python, -m, pytest, -q]
@@ -70,7 +74,8 @@ A dry run executes Copilot and the configured checks without creating a branch, 
 
 - Repository fields override `defaults`.
 - `base_branch: null` uses the repository's default branch.
-- `checks` are argv arrays executed from the target repository root.
+- `instructions` optionally narrows the maintenance task for a repository. It is appended to the fixed safety prompt, limited to 8,000 characters, and should not duplicate guidance in the target's `AGENTS.md`.
+- `checks` are argv arrays shown to Copilot before it works, then executed from the target repository root afterward.
 - `runs_on` selects the GitHub-hosted runner label and defaults to `ubuntu-latest`.
 - The workflow installs each target's committed mise toolchain before running the agent.
 - Every enabled repository needs at least one check; configure its actual test, lint, or build gates rather than only a whitespace check.

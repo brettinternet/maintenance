@@ -12,8 +12,11 @@ defaults:
     email: maintenance-bot@users.noreply.github.com
   # null means the repository's default branch. Set this to main/master/etc.
   base_branch: null
-  # Checks are argv arrays, not shell command strings. They run from the
-  # target repository root after Copilot has finished.
+  # Optional instructions are appended to the fixed safety prompt. Repository
+  # instructions override this default and cannot relax the safety boundaries.
+  instructions: null
+  # Checks are argv arrays, not shell command strings. Copilot sees them before
+  # working, and they run from the target repository root afterward.
   checks:
     - [bun, test]
   draft_pr: true
@@ -29,6 +32,9 @@ repositories:
       name: Ledger Maintenance Bot
       email: ledger-maintenance@users.noreply.github.com
     base_branch: main
+    instructions: |
+      Prefer improvements to type safety and test coverage.
+      Do not change public API behavior.
     checks:
       - [bun, test]
       - [python, -m, pytest, -q]
