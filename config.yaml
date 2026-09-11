@@ -23,6 +23,11 @@ repositories:
       - [shellcheck, scripts/run-copilot.sh, scripts/validate-config.sh]
       - [actionlint, -config-file, .github/actionlint.yaml, .github/workflows/maintenance.yml]
   - owner: *repository_owner
+    name: local
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
     name: worklease
     checks:
       - [git, diff, --check]
