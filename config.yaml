@@ -20,7 +20,7 @@ repositories:
       - [git, diff, --check]
       - [uv, sync, --frozen]
       - [uv, run, pytest]
-      - [shellcheck, scripts/run-copilot.sh, scripts/validate-config.sh]
+      - [shellcheck, scripts/check-homebrew-tap.sh, scripts/run-copilot.sh, scripts/validate-config.sh]
       - [actionlint, -config-file, .github/actionlint.yaml, .github/workflows/maintenance.yml]
   - owner: *repository_owner
     name: local
@@ -105,3 +105,13 @@ repositories:
     checks:
       - [git, diff, --check]
       - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
+    name: homebrew-tap
+    runs_on: macos-15
+    instructions: |
+      First compare Formula/hum.rb with the latest non-draft, non-prerelease brettinternet/hum release.
+      If the formula is behind, make updating both macOS asset URLs and SHA-256 values the maintenance task.
+      Do not bump unless both macOS release assets exist. If it is current, look for another worthwhile task.
+    checks:
+      - [git, diff, --check]
+      - [../scripts/check-homebrew-tap.sh, brettinternet/tap, hum]
