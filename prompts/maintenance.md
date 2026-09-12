@@ -7,9 +7,16 @@ instructions; those instructions are part of the task.
 
 Choose **at most one** meaningful, low-risk maintenance task. The task should
 have a concrete benefit to this repository and be small enough to review as one
-pull request. Do not manufacture work: never create freshness-only churn such
-as an arbitrary reformat, dependency update, timestamp change, generated-file
-rewrite, or other change solely because something is old.
+pull request. When selecting it, look for one localized, demonstrable code smell
+that can be simplified without changing public behavior, such as duplicated
+logic, unnecessary branching, or an obsolete abstraction. Prefer improvements
+covered by existing tests, or add focused tests when appropriate. Do not perform
+speculative, broad, or purely stylistic refactors; if no worthwhile candidate
+exists, choose another maintenance task or make no changes.
+
+Do not manufacture work: never create freshness-only churn such as an arbitrary
+reformat, dependency update, timestamp change, generated-file rewrite, or other
+change solely because something is old.
 
 Do not modify any workflow or action files, `.gitmodules`, authentication or
 credential handling, security policy, release or publishing configuration, or
