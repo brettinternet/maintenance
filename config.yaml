@@ -106,6 +106,20 @@ repositories:
       - [git, diff, --check]
       - [mise, exec, task, --, task, check]
   - owner: *repository_owner
+    name: slackbot
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, setup:gobin]
+      - [mise, exec, task, --, task, check]
+      - [mise, exec, task, --, task, test]
+  - owner: *repository_owner
+    name: slack-desk-bot
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [mise, exec, task, --, task, check]
+      - [mise, exec, task, --, task, test]
+  - owner: *repository_owner
     name: homebrew-tap
     runs_on: macos-15
     instructions: |
