@@ -128,3 +128,39 @@ repositories:
     checks:
       - [git, diff, --check]
       - [./.github/scripts/check-homebrew-tap.sh, brettinternet/tap, hum]
+  - owner: *repository_owner
+    name: homelab
+    instructions: |
+      Prefer maintenance to validation, documentation, and local tooling.
+      Do not change deployed services, host configuration, or encrypted secret files.
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
+    name: stream-deck-hammerspoon
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [bun, run, lint]
+      - [bun, run, check]
+      - [bun, run, test]
+      - [bun, run, validate]
+  - owner: *repository_owner
+    name: slides
+    instructions: |
+      Prefer maintenance to shared layouts, scripts, tooling, and tests.
+      Do not rewrite authored slide content or change the presentation design.
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
+    name: scad
+    instructions: |
+      Preserve the rendered models' dimensions, fit, and geometry.
+      Do not commit generated model files.
+    checks:
+      - [git, diff, --check]
+      - [sudo, apt-get, update]
+      - [sudo, apt-get, install, --yes, openscad]
+      - [mise, exec, task, --, task, render]
