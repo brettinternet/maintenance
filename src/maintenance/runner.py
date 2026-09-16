@@ -24,8 +24,9 @@ class RunnerError(RuntimeError):
 
 FORBIDDEN_PATH_PREFIXES = (".github/workflows", ".github/actions")
 FORBIDDEN_PATH_NAMES = (".gitmodules",)
-COMMIT_MESSAGE = "chore: apply low-risk maintenance"
-PR_TITLE = "chore: apply low-risk maintenance"
+PR_METADATA_PATH = Path(".git/maintenance-pr.json")
+PR_TITLE_MAX_LENGTH = 72
+PR_DESCRIPTION_MAX_LENGTH = 300
 
 
 def forbidden_paths(paths: Sequence[str]) -> list[str]:
@@ -260,6 +261,36 @@ def _maintenance_branch() -> str:
     return f"maintenance/{timestamp}-{uuid.uuid4().hex[:12]}"
 
 
+def _pr_metadata(cwd: Path) -> tuple[str, str]:
+    metadata_path = cwd / PR_METADATA_PATH
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise RunnerError("Copilot did not provide pull request metadata") from error
+    except (OSError, json.JSONDecodeError) as error:
+        raise RunnerError(f"could not read Copilot pull request metadata: {error}") from error
+    if not isinstance(metadata, dict):
+        raise RunnerError("Copilot pull request metadata must be a JSON object")
+
+    values: list[str] = []
+    for field, maximum_length in (
+        ("title", PR_TITLE_MAX_LENGTH),
+        ("description", PR_DESCRIPTION_MAX_LENGTH),
+    ):
+        value = metadata.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise RunnerError(f"Copilot pull request metadata {field!r} must be a non-empty string")
+        value = value.strip()
+        if any(ord(character) < 32 for character in value):
+            raise RunnerError(f"Copilot pull request metadata {field!r} must be a single line")
+        if len(value) > maximum_length:
+            raise RunnerError(
+                f"Copilot pull request metadata {field!r} exceeds {maximum_length} characters"
+            )
+        values.append(value)
+    return values[0], values[1]
+
+
 def _git_with_app_token(command: Sequence[str], cwd: Path, token: str) -> None:
     encoded = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
     environment = os.environ.copy()
@@ -283,17 +314,15 @@ def _create_pr(
     draft: bool,
     author_name: str,
     checks: Sequence[Sequence[str]],
+    title: str,
+    description: str,
 ) -> None:
     body = "\n".join(
         [
-            "## Automated maintenance",
+            description,
             "",
-            "This PR was prepared by the central GitHub Actions maintenance orchestrator.",
-            "",
-            f"- Commit author: `{author_name}`",
-            f"- Configured checks: `{len(checks)}`",
-            "- A fine-grained token authenticates the push and pull request as its owner.",
-            "- This PR is intentionally limited to one low-risk maintenance change.",
+            "---",
+            f"Automated maintenance by `{author_name}`. Configured checks: `{len(checks)}`.",
         ]
     )
     environment = _github_environment()
@@ -311,7 +340,7 @@ def _create_pr(
             "--base",
             base_branch,
             "--title",
-            PR_TITLE,
+            title,
             "--body-file",
             str(body_path),
         ]
@@ -384,6 +413,8 @@ def finalize(matrix_argument: str | None = None, repo_root: str | Path = ".") ->
         print("An open automated maintenance PR appeared during checks; skipping this repository.")
         return 0
 
+    title, description = _pr_metadata(cwd)
+
     if dry_run:
         print("Dry run: checks passed; no branch, commit, push, or pull request was created.")
         return 0
@@ -404,9 +435,19 @@ def finalize(matrix_argument: str | None = None, repo_root: str | Path = ".") ->
     if not staged_paths:
         print("Nothing is staged after safety checks; skipping commit and pull request.")
         return 0
-    _checked(["git", "commit", "-m", COMMIT_MESSAGE], cwd)
+    _checked(["git", "commit", "-m", title], cwd)
     _git_with_app_token(["push", "--set-upstream", "origin", branch], cwd, token)
-    _create_pr(cwd, repository, branch, resolved_base_branch, draft, author_name, checks)
+    _create_pr(
+        cwd,
+        repository,
+        branch,
+        resolved_base_branch,
+        draft,
+        author_name,
+        checks,
+        title,
+        description,
+    )
     print(f"Created {'draft ' if draft else ''}maintenance PR from {branch}.")
     return 0
 

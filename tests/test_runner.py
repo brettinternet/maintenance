@@ -7,7 +7,12 @@ import os
 import pytest
 
 from maintenance import runner
-from maintenance.runner import RunnerError, _checks_environment, _matrix_checks, forbidden_paths
+from maintenance.runner import (
+    RunnerError,
+    _checks_environment,
+    _matrix_checks,
+    forbidden_paths,
+)
 
 
 def _matrix(**overrides):
@@ -31,6 +36,16 @@ def _prepare_changed_tree(monkeypatch, paths=None):
     monkeypatch.setattr(runner, "_git_status", lambda cwd: b" M src/app.py\0")
     monkeypatch.setattr(runner, "changed_paths", lambda cwd: paths or ["src/app.py"])
     monkeypatch.setattr(runner, "has_open_automated_pr", lambda repository, cwd: False)
+
+
+def _write_pr_metadata(cwd, **overrides):
+    metadata = {
+        "title": "refactor: simplify app startup",
+        "description": "Removes duplicate startup logic so initialization stays consistent.",
+    }
+    metadata.update(overrides)
+    (cwd / ".git").mkdir()
+    (cwd / runner.PR_METADATA_PATH).write_text(json.dumps(metadata), encoding="utf-8")
 
 
 def test_forbidden_paths_include_nested_gitmodules_and_sensitive_directories():
@@ -104,6 +119,7 @@ def test_push_token_is_passed_outside_command_line(monkeypatch, tmp_path):
 
 def test_finalize_dry_run_checks_without_publishing(monkeypatch, tmp_path, capsys):
     _prepare_changed_tree(monkeypatch)
+    _write_pr_metadata(tmp_path)
     checked = []
     monkeypatch.setattr(runner, "_run_checks", lambda checks, cwd: checked.extend(checks))
 
@@ -137,6 +153,7 @@ def test_finalize_rejects_forbidden_changes_created_by_checks(monkeypatch, tmp_p
 
 def test_finalize_stages_commits_pushes_and_creates_pr(monkeypatch, tmp_path):
     _prepare_changed_tree(monkeypatch)
+    _write_pr_metadata(tmp_path)
     monkeypatch.setenv("GH_TOKEN", "secret-token")
     monkeypatch.setattr(runner, "_run_checks", lambda checks, cwd: None)
     monkeypatch.setattr(runner, "_maintenance_branch", lambda: "maintenance/test")
@@ -163,6 +180,25 @@ def test_finalize_stages_commits_pushes_and_creates_pr(monkeypatch, tmp_path):
     assert runner.finalize(_matrix(), tmp_path) == 0
     assert ["git", "switch", "--create", "maintenance/test"] in commands
     assert ["git", "add", "--all"] in commands
-    assert ["git", "commit", "-m", runner.COMMIT_MESSAGE] in commands
+    assert ["git", "commit", "-m", "refactor: simplify app startup"] in commands
     assert pushed == [(["push", "--set-upstream", "origin", "maintenance/test"], "secret-token")]
     assert created[0][1:5] == ("acme/service", "maintenance/test", "main", True)
+    assert created[0][-2:] == (
+        "refactor: simplify app startup",
+        "Removes duplicate startup logic so initialization stays consistent.",
+    )
+
+
+def test_pr_metadata_requires_concise_single_line_values(tmp_path):
+    _write_pr_metadata(tmp_path, title="x" * 73)
+
+    with pytest.raises(RunnerError, match="title.*exceeds 72"):
+        runner._pr_metadata(tmp_path)
+
+
+def test_pr_metadata_is_required_for_changed_tree(monkeypatch, tmp_path):
+    _prepare_changed_tree(monkeypatch)
+    monkeypatch.setattr(runner, "_run_checks", lambda checks, cwd: None)
+
+    with pytest.raises(RunnerError, match="did not provide pull request metadata"):
+        runner.finalize(_matrix(dry_run=True), tmp_path)

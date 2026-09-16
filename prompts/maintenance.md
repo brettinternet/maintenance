@@ -30,5 +30,16 @@ URLs. Do not alter the central orchestrator checkout.
 
 If no worthwhile low-risk task is available, make no changes and leave the
 working tree clean. If you do make a change, keep it focused and explain the
-benefit and verification in your final response. The wrapper will run the
-configured checks after you finish.
+benefit and verification in your final response. Before finishing, also write
+`.git/maintenance-pr.json` with exactly this structure:
+
+```json
+{"title":"<concise title describing the change>","description":"<concise description of what changed and why>"}
+```
+
+The title must be at most 72 characters. The description must be at most 300
+characters and explain both what the change does and why it is useful. Both
+values must be non-empty single-line strings specific to the work performed.
+This file is publication metadata inside Git's private directory, not part of
+the repository change. The wrapper will run the configured checks after you
+finish.
