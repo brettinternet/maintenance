@@ -47,6 +47,12 @@ def forbidden_paths(paths: Sequence[str]) -> list[str]:
     return sorted(rejected)
 
 
+def _reject_forbidden_paths(paths: Sequence[str], context: str = "forbidden paths changed") -> None:
+    rejected = forbidden_paths(paths)
+    if rejected:
+        raise RunnerError(f"{context}: " + ", ".join(rejected))
+
+
 def _run(
     command: Sequence[str],
     cwd: Path,
@@ -390,9 +396,7 @@ def finalize(matrix_argument: str | None = None, repo_root: str | Path = ".") ->
         return 0
 
     paths = changed_paths(cwd)
-    rejected = forbidden_paths(paths)
-    if rejected:
-        raise RunnerError("forbidden paths changed: " + ", ".join(rejected))
+    _reject_forbidden_paths(paths)
 
     if has_open_automated_pr(repository, cwd):
         print("An open automated maintenance PR already exists; skipping this repository.")
@@ -400,9 +404,10 @@ def finalize(matrix_argument: str | None = None, repo_root: str | Path = ".") ->
 
     _run_checks(checks, cwd)
     paths_after_checks = changed_paths(cwd)
-    rejected = forbidden_paths(paths_after_checks)
-    if rejected:
-        raise RunnerError("configured checks changed forbidden paths: " + ", ".join(rejected))
+    _reject_forbidden_paths(
+        paths_after_checks,
+        context="configured checks changed forbidden paths",
+    )
     if not _git_status(cwd):
         print("Configured checks left a clean working tree; skipping commit and pull request.")
         return 0
@@ -429,9 +434,7 @@ def finalize(matrix_argument: str | None = None, repo_root: str | Path = ".") ->
     _checked(["git", "config", "user.email", author_email], cwd)
     _checked(["git", "add", "--all"], cwd)
     staged_paths = _nul_paths(_git_bytes(["git", "diff", "--cached", "--name-only", "-z"], cwd))
-    rejected = forbidden_paths(staged_paths)
-    if rejected:
-        raise RunnerError("forbidden paths staged: " + ", ".join(rejected))
+    _reject_forbidden_paths(staged_paths, context="forbidden paths staged")
     if not staged_paths:
         print("Nothing is staged after safety checks; skipping commit and pull request.")
         return 0
