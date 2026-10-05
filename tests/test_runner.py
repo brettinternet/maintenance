@@ -69,6 +69,11 @@ def test_matrix_requires_at_least_one_check():
         _matrix_checks({"checks": []})
 
 
+def test_run_checks_rejects_empty_check_list(tmp_path):
+    with pytest.raises(RunnerError, match="at least one command"):
+        runner._run_checks([], tmp_path)
+
+
 def test_matrix_rejects_control_characters_in_checks():
     with pytest.raises(RunnerError, match="control characters"):
         _matrix_checks({"checks": [["python", "-m\n", "pytest"]]})

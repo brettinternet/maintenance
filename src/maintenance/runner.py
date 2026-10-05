@@ -252,8 +252,7 @@ def _checks_environment() -> dict[str, str]:
 
 def _run_checks(checks: Sequence[Sequence[str]], cwd: Path) -> None:
     if not checks:
-        print("No configured checks; continuing with the safety gates.")
-        return
+        raise RunnerError("configured checks must contain at least one command")
     environment = _checks_environment()
     for index, command in enumerate(checks, start=1):
         print(f"Running configured check {index}: {' '.join(command)}")
