@@ -33,6 +33,12 @@ repositories:
       - [docker, compose, config, --quiet]
       - [shellcheck, bin/attach-agent, bin/run-agent, bin/web-search]
   - owner: *repository_owner
+    name: after
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
     name: local
     checks:
       - [git, diff, --check]
