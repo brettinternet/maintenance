@@ -57,6 +57,17 @@ repositories:
       - [git, diff, --check]
       - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
+    name: hunk-guide
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [bun, run, check]
+  - owner: *repository_owner
+    name: noon
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, ci]
+  - owner: *repository_owner
     name: brettinternet.github.io
     instructions: |
       Prefer accessibility, semantic HTML, broken-link, metadata, or test-coverage improvements.
