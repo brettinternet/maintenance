@@ -68,6 +68,11 @@ repositories:
       - [git, diff, --check]
       - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
+    name: tell
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, ci]
+  - owner: *repository_owner
     name: brettinternet.github.io
     instructions: |
       Prefer accessibility, semantic HTML, broken-link, metadata, or test-coverage improvements.
