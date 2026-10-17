@@ -11,5 +11,9 @@ gh = "2.100.0"
 actionlint = "1.7.12"
 shellcheck = "0.11.0"
 
+"github:brettinternet/worklease" = { version = "latest", minimum_release_age = "0" }
+"github:brettinternet/noon" = { version = "latest", minimum_release_age = "0" }
+"github:brettinternet/tell" = { version = "latest", minimum_release_age = "0" }
+
 [settings]
 npm.package_manager = "bun"

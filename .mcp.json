@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "hum": {
+      "command": "hum",
+      "args": ["mcp"]
+    },
+    "tell": {
+      "command": "tell",
+      "args": ["mcp"]
+    },
+    "noon": {
+      "command": "noon",
+      "args": ["mcp"]
+    },
+    "worklease": {
+      "command": "worklease",
+      "args": ["mcp"]
+    }
+  }
+}
