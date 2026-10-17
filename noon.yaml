@@ -10,10 +10,8 @@ jobs:
       - -ec
       - |
         export APPRISE_URLS="pover://${PUSHOVER_USER_KEY:?must be exported}@${PUSHOVER_TOKEN:?must be exported}"
-        exec ~/.bin/agent \
-          --name reviewer \
+        exec ~/.bin/agent reviewer \
           --pane-title "review-$(date +%s)" \
-          --herdr-name "review-$(date +%s)-$$" \
           --herdr-session default \
           --workspace maintenance --tab review \
           --cwd /Users/brett/dev/me/maintenance \
