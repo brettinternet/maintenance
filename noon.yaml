@@ -9,7 +9,7 @@ jobs:
       - /bin/bash
       - -ec
       - |
-        export APPRISE_URLS="pover://${PUSHOVER_USER_KEY:?must be exported}@${PUSHOVER_TOKEN:?must be exported}"
+        : "${APPRISE_URLS:?must be exported in the scheduler environment}"
         exec ~/.bin/agent reviewer \
           --pane-title "review-$(date +%s)" \
           --herdr-session default \
@@ -24,5 +24,12 @@ jobs:
         Use Tell MCP to notify the user of any problems or blockers, including the PR URL
         and any action needed, only when there are issues.'
     timeout: 2m
-    on_success: [/bin/sh, scripts/noon-notify.sh]
-    on_failure: [/bin/sh, scripts/noon-notify.sh]
+    # APPRISE_URLS is inherited from the scheduler environment; keep secrets out of YAML.
+    on_success: >-
+      : "${APPRISE_URLS:?must be exported in the scheduler environment}" &&
+      exec tell notify --type success --title maintenance
+      "Pi review prompt dispatched in maintenance / review."
+    on_failure: >-
+      : "${APPRISE_URLS:?must be exported in the scheduler environment}" &&
+      exec tell notify --type failure --title maintenance
+      "Pi review launcher failed. Check noon logs review."
