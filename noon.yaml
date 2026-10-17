@@ -3,9 +3,28 @@ version: 1
 
 jobs:
   review:
-    description: Start Pi in Herdr with the prompt test
+    description: Review, fix, and merge project PRs in Herdr
     schedule: every monday at 10am
-    run: [/bin/bash, scripts/noon-review.sh]
+    run:
+      - /bin/bash
+      - -ec
+      - |
+        export APPRISE_URLS="pover://${PUSHOVER_USER_KEY:?must be exported}@${PUSHOVER_TOKEN:?must be exported}"
+        exec ~/.bin/agent \
+          --name reviewer \
+          --pane-title "review-$(date +%s)" \
+          --herdr-name "review-$(date +%s)-$$" \
+          --herdr-session default \
+          --workspace maintenance --tab review \
+          --cwd /Users/brett/dev/me/maintenance \
+          --env APPRISE_URLS \
+          -- \
+          'Review all PRs created by this project. Fix any issues that need addressing,
+        then merge changes that are good and safe to merge. Close PRs that are not
+        worthwhile changes rather than merging them.
+
+        Use Tell MCP to notify the user of any problems or blockers, including the PR URL
+        and any action needed, only when there are issues.'
     timeout: 2m
     on_success: [/bin/sh, scripts/noon-notify.sh]
     on_failure: [/bin/sh, scripts/noon-notify.sh]
