@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brettinternet/noon/main/noon.schema.json
+version: 1
+
+jobs:
+  review:
+    description: Start Pi in Herdr with the prompt test
+    schedule: every monday at 10am
+    run: [/bin/bash, scripts/noon-review.sh]
+    timeout: 2m
+    on_success: [/bin/sh, scripts/noon-notify.sh]
+    on_failure: [/bin/sh, scripts/noon-notify.sh]

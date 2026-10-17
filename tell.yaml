@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/brettinternet/tell/main/tell.shared.schema.json
+version: 1
+apprise:
+  format: text
