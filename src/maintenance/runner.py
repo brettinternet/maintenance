@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -286,7 +287,7 @@ def _pr_metadata(cwd: Path) -> tuple[str, str]:
         if not isinstance(value, str) or not value.strip():
             raise RunnerError(f"Copilot pull request metadata {field!r} must be a non-empty string")
         value = value.strip()
-        if any(ord(character) < 32 for character in value):
+        if any(unicodedata.category(character) in {"Cc", "Zl", "Zp"} for character in value):
             raise RunnerError(f"Copilot pull request metadata {field!r} must be a single line")
         if len(value) > maximum_length:
             raise RunnerError(

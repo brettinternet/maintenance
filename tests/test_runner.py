@@ -201,6 +201,14 @@ def test_pr_metadata_requires_concise_single_line_values(tmp_path):
         runner._pr_metadata(tmp_path)
 
 
+@pytest.mark.parametrize("separator", ["\u0085", "\u2028", "\u2029"])
+def test_pr_metadata_rejects_unicode_line_separators(tmp_path, separator):
+    _write_pr_metadata(tmp_path, description=f"first{separator}second")
+
+    with pytest.raises(RunnerError, match="description.*single line"):
+        runner._pr_metadata(tmp_path)
+
+
 def test_pr_metadata_is_required_for_changed_tree(monkeypatch, tmp_path):
     _prepare_changed_tree(monkeypatch)
     monkeypatch.setattr(runner, "_run_checks", lambda checks, cwd: None)
