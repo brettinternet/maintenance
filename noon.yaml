@@ -8,14 +8,19 @@ jobs:
     run:
       - /bin/bash
       - -ec
+      - 'exec direnv exec ~ /bin/bash -ec "$1"'
+      - --
       - |
-        : "${APPRISE_URLS:?must be exported in the scheduler environment}"
+        notify_env=()
+        if [[ -n "${APPRISE_URLS:-}" ]]; then
+          notify_env=(--env APPRISE_URLS)
+        fi
         exec ~/.bin/agent reviewer \
           --pane-title "review-$(date +%s)" \
           --herdr-session default \
           --workspace maintenance --tab review \
           --cwd /Users/brett/dev/me/maintenance \
-          --env APPRISE_URLS \
+          "${notify_env[@]}" \
           -- \
           'Review all PRs created by this project. Fix any issues that need addressing,
         then merge changes that are good and safe to merge. Close PRs that are not
@@ -24,12 +29,14 @@ jobs:
         Use Tell MCP to notify the user of any problems or blockers, including the PR URL
         and any action needed, only when there are issues.'
     timeout: 2m
-    # APPRISE_URLS is inherited from the scheduler environment; keep secrets out of YAML.
+    # Load optional APPRISE_URLS from ~/.envrc for the launcher and notification hooks.
     on_success: >-
-      : "${APPRISE_URLS:?must be exported in the scheduler environment}" &&
+      exec direnv exec ~ /bin/bash -ec '
+      [ -n "${APPRISE_URLS:-}" ] || exit 0;
       exec tell notify --type success --title maintenance
-      "Pi review prompt dispatched in maintenance / review."
+      "Pi review prompt dispatched in maintenance / review."'
     on_failure: >-
-      : "${APPRISE_URLS:?must be exported in the scheduler environment}" &&
+      exec direnv exec ~ /bin/bash -ec '
+      [ -n "${APPRISE_URLS:-}" ] || exit 0;
       exec tell notify --type failure --title maintenance
-      "Pi review launcher failed. Check noon logs review."
+      "Pi review launcher failed. Check noon logs review."'
