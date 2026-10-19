@@ -21,7 +21,7 @@ jobs:
           --workspace maintenance --tab review \
           --cwd /Users/brett/dev/me/maintenance \
           "${notify_env[@]}" \
-          -- \
+          --prompt \
           'Review all PRs created by this project. Fix any issues that need addressing,
         then merge changes that are good and safe to merge. Close PRs that are not
         worthwhile changes rather than merging them.
