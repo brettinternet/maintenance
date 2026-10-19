@@ -26,15 +26,15 @@ jobs:
         then merge changes that are good and safe to merge. Close PRs that are not
         worthwhile changes rather than merging them.
 
-        Use Tell MCP to notify the user of any problems or blockers, including the PR URL
-        and any action needed, only when there are issues.'
+        Use Tell MCP only to escalate unresolved problems or blockers that require
+        user attention or action and cannot be resolved safely within this run.
+        Do not notify for job start, progress, discovered issues you can resolve,
+        successful completion, or routine decisions to fix, merge, or close PRs.
+        If escalation is needed, send one consolidated notification with relevant
+        PR URLs, what remains blocked, and the specific user action needed.
+        Otherwise, send no notifications.'
     timeout: 2m
-    # Load optional APPRISE_URLS from ~/.envrc for the launcher and notification hooks.
-    on_success: >-
-      exec direnv exec ~ /bin/bash -ec '
-      [ -n "${APPRISE_URLS:-}" ] || exit 0;
-      exec tell notify --type success --title maintenance
-      "Pi review prompt dispatched in maintenance / review."'
+    # Notify only if the launcher fails; successful dispatch is silent.
     on_failure: >-
       exec direnv exec ~ /bin/bash -ec '
       [ -n "${APPRISE_URLS:-}" ] || exit 0;
