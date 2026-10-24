@@ -44,6 +44,11 @@ repositories:
       - [git, diff, --check]
       - [mise, exec, task, --, task, check]
   - owner: *repository_owner
+    name: backlog
+    checks:
+      - [git, diff, --check]
+      - [mise, exec, task, --, task, ci]
+  - owner: *repository_owner
     name: worklease
     checks:
       - [git, diff, --check]
