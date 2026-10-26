@@ -47,11 +47,12 @@ def _write_matrix_output(output: str, matrix: str) -> None:
     if output == "-":
         print(matrix)
         return
+    matrix_data = json.loads(matrix)
     output_path = Path(output)
     try:
         with output_path.open("a", encoding="utf-8") as stream:
             stream.write(f"matrix={matrix}\n")
-            stream.write(f"has_targets={'true' if json.loads(matrix)['include'] else 'false'}\n")
+            stream.write(f"has_targets={'true' if matrix_data['include'] else 'false'}\n")
     except OSError as error:
         raise ConfigError(f"could not write GitHub Actions output {output_path}: {error}") from error
 
