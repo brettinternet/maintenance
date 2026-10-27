@@ -39,6 +39,15 @@ repositories:
       - [bun, install, --frozen-lockfile]
       - [mise, exec, task, --, task, check]
   - owner: *repository_owner
+    name: linkding-extension
+    instructions: |
+      Check upstream https://github.com/sissbruecker/linkding for changes the extension should incorporate,
+      such as API, authentication, or bookmark field changes, and prefer adapting to those.
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [bun, run, build]
+  - owner: *repository_owner
     name: local
     checks:
       - [git, diff, --check]
