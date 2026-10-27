@@ -41,8 +41,8 @@ repositories:
   - owner: *repository_owner
     name: linkding-extension
     instructions: |
-      Check upstream https://github.com/sissbruecker/linkding for changes the extension should incorporate,
-      such as API, authentication, or bookmark field changes, and prefer adapting to those.
+      Check upstream https://github.com/sissbruecker/linkding-extension for changes to incorporate,
+      and prefer porting those over other maintenance.
     checks:
       - [git, diff, --check]
       - [bun, install, --frozen-lockfile]
