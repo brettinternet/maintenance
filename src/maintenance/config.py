@@ -170,8 +170,10 @@ def _branch(value: Any, location: str) -> str | None:
         or ".." in candidate
         or "@{" in candidate
         or any(character in " ~^:?*[\\" for character in candidate)
-        or any(segment in {".", ".."} for segment in candidate.split("/"))
-        or any(segment.startswith("-") for segment in candidate.split("/"))
+        or any(
+            segment.startswith((".", "-")) or segment.endswith(".lock")
+            for segment in candidate.split("/")
+        )
     ):
         raise ConfigError(f"{location} is not a valid Git branch name")
     return candidate

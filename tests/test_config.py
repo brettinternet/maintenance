@@ -111,6 +111,14 @@ def test_malformed_repository_values_are_rejected(tmp_path, replacement):
         load_config(write_config(tmp_path, VALID.replace(old, new, 1)))
 
 
+@pytest.mark.parametrize("branch", ["feature/.hidden/release", "feature/name.lock/release"])
+def test_invalid_branch_components_are_rejected(tmp_path, branch):
+    contents = VALID.replace("  base_branch: null", f"  base_branch: {branch}", 1)
+
+    with pytest.raises(ConfigError, match="valid Git branch name"):
+        load_config(write_config(tmp_path, contents))
+
+
 @pytest.mark.parametrize("escaped_control", [r"\x7f", r"\u009b"])
 def test_instructions_reject_control_characters(tmp_path, escaped_control):
     contents = VALID.replace(
