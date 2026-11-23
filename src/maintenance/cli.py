@@ -6,8 +6,9 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
-from .config import ConfigError, load_config, matrix_json
+from .config import ConfigError, load_config
 
 
 def _boolean(value: str) -> bool:
@@ -43,15 +44,16 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _write_matrix_output(output: str, matrix: str) -> None:
+def _write_matrix_output(output: str, matrix: dict[str, list[dict[str, Any]]]) -> None:
+    serialized = json.dumps(matrix, separators=(",", ":"), sort_keys=True)
     if output == "-":
-        print(matrix)
+        print(serialized)
         return
     output_path = Path(output)
     try:
         with output_path.open("a", encoding="utf-8") as stream:
-            stream.write(f"matrix={matrix}\n")
-            stream.write(f"has_targets={'true' if json.loads(matrix)['include'] else 'false'}\n")
+            stream.write(f"matrix={serialized}\n")
+            stream.write(f"has_targets={'true' if matrix['include'] else 'false'}\n")
     except OSError as error:
         raise ConfigError(f"could not write GitHub Actions output {output_path}: {error}") from error
 
@@ -78,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
             return 0
 
-        matrix = matrix_json(config, arguments.filter, arguments.dry_run)
+        matrix = config.matrix(arguments.filter, arguments.dry_run)
         _write_matrix_output(arguments.output, matrix)
         return 0
     except ConfigError as error:
