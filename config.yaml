@@ -87,6 +87,12 @@ repositories:
       - [git, diff, --check]
       - [mise, exec, task, --, task, ci]
   - owner: *repository_owner
+    name: watch
+    checks:
+      - [git, diff, --check]
+      - [bun, install, --frozen-lockfile]
+      - [mise, exec, task, --, task, check]
+  - owner: *repository_owner
     name: brettinternet.github.io
     instructions: |
       Prefer accessibility, semantic HTML, broken-link, metadata, or test-coverage improvements.
