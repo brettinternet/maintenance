@@ -36,7 +36,7 @@ jobs:
     timeout: 2m
     # Notify only if the launcher fails; successful dispatch is silent.
     on_failure: >-
-      exec direnv exec ~ /bin/bash -ec '
+      noon-healthchecks; exec direnv exec ~ /bin/bash -ec '
       [ -n "${APPRISE_URLS:-}" ] || exit 0;
       exec tell notify --type failure --title maintenance
       "Pi review launcher failed. Check noon logs review."'
